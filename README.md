@@ -1,119 +1,105 @@
-# Vehicle License Plate Scanner & Classification System
+# 🚗 Vehicle Vision System: Detection, Tracking & LPR
 
-A comprehensive computer vision project for vehicle detection, tracking, counting, classification (make/model), and license plate OCR.
+A high-performance, integrated computer vision pipeline designed for real-time vehicle analytics. This system combines state-of-the-art deep learning models to perform vehicle detection, multi-object tracking, make/model classification, and automatic license plate recognition (ALPR/LPR).
 
-## Features
+![Pipeline Overview](https://img.shields.io/badge/Pipeline-YOLOv11%20+%20ByteTrack%20+%20EasyOCR-blue)
+![Python Version](https://img.shields.io/badge/Python-3.9+-green)
 
-- **Vehicle Detection**: Uses YOLOv11 to detect cars, trucks, buses, and motorcycles
-- **Vehicle Tracking**: ByteTrack algorithm to maintain unique IDs across frames
-- **Vehicle Counting**: Tracks total unique vehicles seen
-- **Make/Model Classification**: Deep learning classifier for vehicle identification
-- **License Plate OCR**: EasyOCR for reading license plate text
+---
 
-## Installation
+## 🌟 Key Features
 
-1. Create and activate virtual environment:
+- **🚀 Real-time Detection**: Powered by **YOLOv11** for rapid identification of cars, trucks, buses, and motorcycles.
+- **🛰️ Precision Tracking**: Employs the **ByteTrack** algorithm to maintain consistent vehicle IDs across frames, even through occlusions.
+- **🔍 Make/Model Intelligence**: Uses a specialized Vision Transformer (ViT) to classify vehicles by specific make and model.
+- **🔢 Automated License Plate Recognition (ALPR)**: Integrated **EasyOCR** engine for high-accuracy text extraction from license plates.
+- **🎥 Multi-Input Support**: Seamlessly process local video files, direct URLs, YouTube links, or live webcam/RTSP streams.
+- **📏 Optimized Overlays**: Clean, professional video overlays showing only essential information (Make/Model + Plate) in a non-obtrusive font.
+
+---
+
+## 🏗️ System Architecture
+
+The system operates as a sequential pipeline with intelligent frame-skipping to maximize performance:
+
+1.  **Detection Layer**: YOLOv11 analyzes the frame to find bounding boxes for vehicles.
+2.  **Tracking Layer**: ByteTrack associates detections across time to assign persistent IDs.
+3.  **Processing Queue**:
+    *   **Classification**: Every 10th frame, the vehicle crop is passed to the Make/Model classifier.
+    *   **OCR**: Every 30th frame, the license plate area is extracted and read by EasyOCR.
+4.  **Reporting**: Results are logged to a CSV and visualized with real-time HUD overlays.
+
+---
+
+## 🛠️ Installation
+
+1. **Clone & Setup Environment**:
+   ```bash
+   git clone <your-repo-url>
+   cd vehicle-vision-system
+   python -m venv venv
+   .\venv\Scripts\activate  # Windows
+   # source venv/bin/activate  # Linux/Mac
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pip install ultralytics opencv-python easyocr transformers timm pandas yt-dlp
+   ```
+
+---
+
+## 🚀 Usage Guide
+
+### 1. Interactive Pipeline (`run_pipeline.py`)
+The most versatile way to process videos. Supports local files, YouTube links, and direct URLs.
 ```bash
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-# or
-source venv/bin/activate  # Linux/Mac
+python run_pipeline.py
 ```
+*Follow the on-screen prompts to provide your input and choose output paths.*
 
-2. Install dependencies:
-```bash
-pip install ultralytics opencv-python easyocr transformers timm pandas
-```
-
-## Project Structure
-
-```
-distant-quasar/
-├── src/
-│   ├── detector.py       # Vehicle detection (YOLO)
-│   ├── tracker.py        # Vehicle tracking & counting
-│   ├── classifier.py     # Make/model classification
-│   ├── lpr.py           # License plate OCR
-│   └── generate_mock_data.py  # Generate test images
-├── data/                # Input/output data
-├── models/              # Model weights (auto-downloaded)
-├── main.py             # Main pipeline
-└── README.md
-```
-
-## Usage
-
-### Quick Test
-
-```python
-from main import VehicleAnalysisPipeline
-
-pipeline = VehicleAnalysisPipeline()
-pipeline.process_video('input.mp4', 'output.mp4', max_frames=100)
-pipeline.save_results('results.csv')
-```
-
-### Live Camera/Webcam
-
+### 2. Live Camera Feed (`run_live.py`)
+Optimized for real-time webcam or IP camera monitoring.
 ```bash
 python run_live.py
 ```
+*   **Controls**: 
+    *   `q`: Quit the application
+    *   `s`: Save current session results to CSV
 
-Process live video from your webcam or IP camera in real-time. Press 'q' to quit, 's' to save results.
+---
 
-### Individual Components
+## 📊 Output Data Format
 
-#### Vehicle Detection
-```python
-from src.detector import VehicleDetector
-import cv2
+The system generates a comprehensive `results.csv` with the following telemetry:
 
-detector = VehicleDetector()
-frame = cv2.imread('car_image.jpg')
-detections = detector.detect_vehicles(frame)
-```
+| Column | Description |
+| :--- | :--- |
+| `frame_id` | Sequence number of the video frame. |
+| `vehicle_id` | Persistent ID assigned by the tracker. |
+| `vehicle_class` | Category (Car, Truck, Bus, Motorcycle). |
+| `make_model` | Identified vehicle brand and model. |
+| `license_plate` | Extracted text from the license plate. |
+| `confidence` | Combined confidence scores for all predictions. |
 
-#### License Plate OCR
-```python
-from src.lpr import LicensePlateScanner
+---
 
-scanner = LicensePlateScanner()
-results = scanner.scan_plate('plate_image.jpg')
-```
+## 🔬 Technical Stack
 
-## Waymo Dataset Notes
+*   **Detector**: [Ultralytics YOLOv11](https://github.com/ultralytics/ultralytics) (Pre-trained on COCO)
+*   **Tracker**: ByteTrack (Integrated in Ultralytics)
+*   **Classifier**: HuggingFace `dima806/car_models_image_detection` (ViT)
+*   **OCR**: [EasyOCR](https://github.com/JaidedAI/EasyOCR)
+*   **Video Engine**: OpenCV (Open Source Computer Vision Library)
 
-⚠️ **Important**: The Waymo Open Dataset blurs license plates and faces for privacy. 
-- Use Waymo data for vehicle detection, tracking, and counting
-- Use separate unblurred images/videos for license plate OCR testing
-- Waymo provides vehicle type labels (Car, Truck, Bus) but not specific make/model
+---
 
-## Output Format
+## ⚠️ Important Notes/Waymo Dataset
 
-Results are saved as CSV with columns:
-- `frame_id`: Frame number
-- `vehicle_id`: Unique tracking ID
-- `vehicle_class`: Type (car, truck, bus, motorcycle)
-- `make_model`: Classified vehicle make/model
-- `license_plate`: OCR result (if detected)
-- `confidence`: Detection and classification confidence scores
+The **Waymo Open Dataset** is excellent for testing detection and tracking, but please note that **license plates are blurred** for privacy. For testing the OCR component, please use unblurred footage or the provided `mock_plate.jpg` in the `data/` directory.
 
-## Performance
+---
 
-- Detection: ~30 FPS on CPU (faster with GPU)
-- Classification: ~5-10 FPS per vehicle
-- OCR: ~1-2s per plate
+## 📜 License
 
-## Dependencies
-
-- ultralytics (YOLO)
-- opencv-python
-- easyocr
-- transformers
-- timm
-- pandas
-- numpy
-
-## License
-
-For educational and research purposes.
+Distributed under the MIT License. See `LICENSE` for more information.
